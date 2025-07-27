@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎯 My Todo List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Dancing+Script&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      word-wrap: break-word;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(270deg, #ffecd2, #fcb69f, #a1c4fd, #c2e9fb);
+      background-size: 800% 800%;
+      animation: gradientFlow 10s ease infinite;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    @keyframes gradientFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      font-family: 'Dancing Script', cursive;
+      text-align: center;
+      font-size: 32px;
+      color: #e67e22;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-size: 14px;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      background: #27ae60;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #219150;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: #999;
+      font-style: italic;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .priority-high { color: red; font-weight: bold; }
+    .priority-medium { color: orange; }
+    .priority-low { color: green; }
+
+    .deleteBtn {
+      align-self: flex-end;
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    #celebration {
+      display: none;
+      text-align: center;
+      font-size: 24px;
+      margin-top: 20px;
+      color: #e67e22;
+      animation: pop 1s ease infinite alternate;
+    }
+
+    @keyframes pop {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+
+      .container {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      input, select, button {
+        font-size: 14px;
+        padding: 8px;
+      }
+
+      .deleteBtn {
+        padding: 4px 8px;
+        font-size: 14px;
+      }
+
+      .meta {
+        font-size: 12px;
+      }
+
+      #celebration {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 My Todo List</h1>
+
+    <input type="text" id="taskInput" placeholder="Enter your task 📝">
+    <select id="categoryInput">
+      <option value="🛒 Shopping">🛒 Shopping</option>
+      <option value="💼 Work">💼 Work</option>
+      <option value="🏠 Personal">🏠 Personal</option>
+      <option value="📚 Study">📚 Study</option>
+    </select>
+
+    <label for="dateInput">📅 Date</label>
+    <input type="date" id="dateInput">
+
+    <label for="timeInput">⏰ Time</label>
+    <input type="time" id="timeInput">
+
+    <select id="priorityInput">
+      <option value="low">Low Priority 🟢</option>
+      <option value="medium">Medium Priority 🟡</option>
+      <option value="high">High Priority 🔴</option>
+    </select>
+
+    <button onclick="addTask()">➕ Add Task</button>
+
+    <ul id="taskList"></ul>
+    <div id="celebration">🎉 All tasks completed! Great job! 🎉</div>
+  </div>
+
+  <!-- Sound Effects -->
+  <audio id="addSound" src="https://assets.mixkit.co/sfx/download/mixkit-click-melodic-tone-1129.wav"></audio>
+  <audio id="deleteSound" src="https://assets.mixkit.co/sfx/download/mixkit-select-click-1109.wav"></audio>
+  <audio id="completeSound" src="https://assets.mixkit.co/sfx/download/mixkit-game-ball-tap-2073.wav"></audio>
+
+  <script>
+    const taskList = document.getElementById("taskList");
+    const addSound = document.getElementById("addSound");
+    const deleteSound = document.getElementById("deleteSound");
+    const completeSound = document.getElementById("completeSound");
+    const celebration = document.getElementById("celebration");
+
+    window.onload = () => {
+      const savedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      savedTasks.forEach(data => createTaskElement(data));
+      checkCelebration();
+    };
+
+    function addTask() {
+      const task = document.getElementById("taskInput").value.trim();
+      const date = document.getElementById("dateInput").value;
+      const time = document.getElementById("timeInput").value;
+      const category = document.getElementById("categoryInput").value;
+      const priority = document.getElementById("priorityInput").value;
+
+      if (task === "") return;
+
+      const dateTime = date && time ? `${date}T${time}` : "";
+
+      const taskData = {
+        task,
+        date: dateTime,
+        category,
+        priority,
+        completed: false
+      };
+
+      createTaskElement(taskData);
+      saveToLocal(taskData);
+
+      document.getElementById("taskInput").value = "";
+      document.getElementById("dateInput").value = "";
+      document.getElementById("timeInput").value = "";
+      addSound.play();
+      checkCelebration();
+
+      if (dateTime) {
+        const reminderTime = new Date(dateTime).getTime() - Date.now();
+        if (reminderTime > 0) {
+          setTimeout(() => {
+            alert(`🔔 Reminder: ${category} ${task} is due now!`);
+          }, reminderTime);
+        }
+      }
+    }
+
+    function createTaskElement(data) {
+      const li = document.createElement("li");
+      const priorityClass = "priority-" + data.priority;
+
+      li.innerHTML = `
+        <span onclick="toggleComplete(this)" class="${priorityClass} ${data.completed ? 'completed' : ''}">
+          ${data.category} ${data.task} (${data.priority.toUpperCase()})
+        </span>
+        <div class="meta">📅 Reminder: ${data.date ? new Date(data.date).toLocaleString() : "No date"}</div>
+        <button class="deleteBtn" onclick="deleteTask(this)">Delete</button>
+      `;
+      taskList.appendChild(li);
+    }
+
+    function saveToLocal(newTask) {
+      const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+      tasks.push(newTask);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function updateLocalStorage() {
+      const items = document.querySelectorAll("#taskList li");
+      const tasks = [];
+
+      items.forEach(item => {
+        const span = item.querySelector("span");
+        const text = span.textContent;
+        const [categoryTask, priorityPart] = text.split(" (");
+        const [category, ...taskParts] = categoryTask.trim().split(" ");
+        const task = taskParts.join(" ");
+        const priority = priorityPart?.replace(")", "").toLowerCase();
+        const completed = span.classList.contains("completed");
+        const dateText = item.querySelector(".meta").textContent.replace("📅 Reminder: ", "").trim();
+
+        let date = "";
+        try {
+          date = dateText === "No date" ? "" : new Date(dateText).toISOString();
+        } catch (e) {
+          date = "";
+        }
+
+        tasks.push({
+          task,
+          date,
+          category,
+          priority,
+          completed
+        });
+      });
+
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+    }
+
+    function deleteTask(button) {
+      const li = button.parentElement;
+      li.remove();
+      deleteSound.play();
+      updateLocalStorage();
+      checkCelebration();
+    }
+
+    function toggleComplete(span) {
+      span.classList.toggle("completed");
+      completeSound.play();
+      updateLocalStorage();
+      checkCelebration();
+    }
+
+    function checkCelebration() {
+      const tasks = document.querySelectorAll("#taskList li span");
+      const allCompleted = [...tasks].every(t => t.classList.contains("completed"));
+      celebration.style.display = (tasks.length > 0 && allCompleted) ? "block" : "none";
+    }
+
+    document.getElementById("taskInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") addTask();
+    });
+  </script>
+</body>
+</html>
